@@ -738,33 +738,41 @@
                 padding: 12px !important;
             }
             .modal-box {
-                padding: 22px 16px 18px !important;
+                padding: 24px 18px 20px !important;
                 border-radius: 20px !important;
+                width: 95% !important;
+                max-width: 360px !important;
             }
             .modal-prize-title {
-                font-size: 1.05rem !important;
-                margin-bottom: 12px !important;
+                font-size: 1.15rem !important;
+                font-weight: 800 !important;
+                margin-bottom: 14px !important;
+                letter-spacing: -0.5px !important;
             }
             .modal-btn {
                 font-size: 0.88rem !important;
-                padding: 12px !important;
+                padding: 13px !important;
                 border-radius: 10px !important;
+                font-weight: 700 !important;
             }
             .modal-product-preview.compact {
-                width: 76px !important;
-                height: 76px !important;
-                border-radius: 10px !important;
+                width: 80px !important;
+                height: 80px !important;
+                border-radius: 12px !important;
             }
             .modal-desc {
-                font-size: 0.78rem !important;
-                margin-bottom: 16px !important;
-                line-height: 1.6 !important;
+                font-size: 0.82rem !important;
+                margin-bottom: 18px !important;
+                line-height: 1.65 !important;
+                word-break: keep-all !important;
+                font-weight: 500 !important;
             }
             .modal-close-btn {
                 font-size: 0.88rem !important;
-                padding: 12px !important;
+                padding: 13px !important;
                 border-radius: 10px !important;
                 margin-top: 8px !important;
+                font-weight: 700 !important;
             }
         }
 
@@ -937,6 +945,9 @@
                 <button class="modal-btn" onclick="openAdditionalInfoForm()" style="background: var(--accent-blue); color: #ffffff; box-shadow: 0 6px 15px rgba(0, 132, 255, 0.15); width: 100%; border: none; font-weight: 700;">
                     추가 정보 기입하기
                 </button>
+                <div style="font-size: 0.72rem; color: #ef4444; font-weight: 700; text-align: center; margin-top: 8px; line-height: 1.4; letter-spacing: -0.4px; word-break: keep-all;">
+                    ⚠️ 추가 정보를 기입하지 않으시면 경품 지급 대상자에서 제외될 수 있습니다.
+                </div>
             </div>
 
             <button class="modal-close-btn" onclick="closeModal()">

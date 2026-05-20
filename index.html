@@ -819,6 +819,24 @@
             .modal-warning-box .warning-text {
                 font-size: 0.7rem !important;
             }
+            #alert-modal .modal-box {
+                padding: 22px 16px 16px !important;
+                border-radius: 16px !important;
+                max-width: 300px !important;
+            }
+            #alert-modal-icon {
+                font-size: 1.8rem !important;
+                margin-bottom: 8px !important;
+            }
+            #alert-modal-title {
+                font-size: 1.05rem !important;
+                margin-bottom: 8px !important;
+            }
+            #alert-modal-desc {
+                font-size: 0.78rem !important;
+                margin-bottom: 16px !important;
+                line-height: 1.5 !important;
+            }
         }
 
         /* Subtle Floating Creator Watermark */
@@ -1097,10 +1115,62 @@
         </div>
     </div>
 
+    <!-- Premium Custom Alert Modal -->
+    <div id="alert-modal" class="modal-overlay">
+        <div class="modal-box" style="border-top: 5px solid var(--accent-blue); max-width: 340px; padding: 28px 20px 20px;">
+            <div id="alert-modal-icon" style="font-size: 2.2rem; margin-bottom: 12px; display: inline-block;">⚠️</div>
+            <div id="alert-modal-title" style="font-size: 1.15rem; font-weight: 800; color: #111827; margin-bottom: 10px; letter-spacing: -0.5px; word-break: keep-all;">알림</div>
+            <div id="alert-modal-desc" style="font-size: 0.84rem; color: #4b5563; line-height: 1.6; margin-bottom: 20px; font-weight: 500; text-align: center; word-break: keep-all; letter-spacing: -0.3px;">
+                알림 내용
+            </div>
+            <button class="modal-btn" onclick="closeAlertModal()" style="background: #000000; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); width: 100%; border: none; font-weight: 700; padding: 12px; border-radius: 10px; font-size: 0.9rem;">
+                확인
+            </button>
+        </div>
+    </div>
+
     <!-- Dynamic Sound Slots Script -->
     <script>
         // Item catalog configurations dynamically loaded from assets API
         let ITEMS = [];
+
+        // Premium Custom Alert Modal Controller
+        let alertCallback = null;
+
+        function showAlert(title, message, iconType = 'info', callback = null) {
+            const modal = document.getElementById('alert-modal');
+            const iconEl = document.getElementById('alert-modal-icon');
+            const titleEl = document.getElementById('alert-modal-title');
+            const descEl = document.getElementById('alert-modal-desc');
+            const modalBox = modal.querySelector('.modal-box');
+
+            alertCallback = callback;
+
+            if (iconType === 'warning' || iconType === 'error') {
+                iconEl.innerText = '⚠️';
+                modalBox.style.borderTop = '5px solid #ef4444';
+            } else if (iconType === 'success') {
+                iconEl.innerText = '🎉';
+                modalBox.style.borderTop = '5px solid var(--naver-green)';
+            } else {
+                iconEl.innerText = 'ℹ️';
+                modalBox.style.borderTop = '5px solid var(--accent-blue)';
+            }
+
+            titleEl.innerText = title;
+            descEl.innerHTML = message.replace(/\n/g, '<br>');
+
+            modal.classList.add('active');
+        }
+
+        function closeAlertModal() {
+            document.getElementById('alert-modal').classList.remove('active');
+            if (typeof alertCallback === 'function') {
+                const cb = alertCallback;
+                alertCallback = null;
+                cb();
+            }
+        }
 
         // Fetch products from dynamic API
         async function loadProducts() {
@@ -1696,8 +1766,9 @@
         }
 
         function goToStore() {
-            alert('BOSE 네이버 브랜드스토어 쿠폰등록 페이지로 이동합니다! 🛍️');
-            window.location.reload();
+            showAlert('페이지 이동 안내', 'BOSE 네이버 브랜드스토어\n쿠폰등록 페이지로 이동합니다! 🛍️', 'info', () => {
+                window.location.reload();
+            });
         }
 
         // Live winner notice ticker rotation
@@ -1767,11 +1838,11 @@
 
             const naverId = naverIdInput.value.trim();
             if (naverId === '') {
-                alert('고객님의 네이버 ID를 정확하게 기입해 주십시오!');
+                showAlert('입력 확인', '고객님의 네이버 ID를\n정확하게 기입해 주십시오!', 'warning');
                 return;
             }
             if (!agreeCheck.checked) {
-                alert('BOSE 스토어 알림받기 동의 완료 체크박스를 선택해 주십시오!');
+                showAlert('동의 확인', 'BOSE 스토어 알림받기 동의 완료\n체크박스를 선택해 주십시오!', 'warning');
                 return;
             }
 
@@ -1807,7 +1878,7 @@
                     // 메인 버튼 UI 갱신 (블랙 스핀 버튼으로 리프레시)
                     updateSpinButtonText();
                     
-                    alert(`${naverId}님, BOSE 이벤트 참여에 진심으로 감사드립니다. 대박 당첨을 응원합니다!`);
+                    showAlert('연동 성공', `${naverId}님, BOSE 이벤트 참여에\n진심으로 감사드립니다.\n\n대박 당첨을 응원합니다! 🎉`, 'success');
                     
                     // 폼 리셋 및 닫기
                     naverIdInput.value = '';
@@ -1820,7 +1891,11 @@
             })
             .catch(err => {
                 console.error(err);
-                alert(`⚠️ 참여 불가 안내\n${err.message}`);
+                let formattedMsg = err.message;
+                if (formattedMsg.includes('이미 이벤트')) {
+                    formattedMsg = '이미 이벤트 참여 기회를 획득하신\n네이버 아이디입니다!\n\n(중복 참여는 불가능합니다 ⚠️)';
+                }
+                showAlert('참여 불가 안내', formattedMsg, 'warning');
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '무료 스핀 1회 즉시 받기';
             });
@@ -1854,11 +1929,11 @@
             const phone = phoneInput.value.trim();
 
             if (name === '') {
-                alert('당첨 성함을 기입해 주십시오!');
+                showAlert('입력 확인', '당첨 성함을 기입해 주십시오!', 'warning');
                 return;
             }
             if (phone === '') {
-                alert('연락처(전화번호)를 기입해 주십시오!');
+                showAlert('입력 확인', '연락처(전화번호)를 기입해 주십시오!', 'warning');
                 return;
             }
 
@@ -1879,7 +1954,7 @@
             })
             .then(res => res.json())
             .then(data => {
-                alert('당첨자 정보 등록이 안전하게 완료되었습니다! 감사합니다.');
+                showAlert('등록 완료', '당첨자 정보 등록이\n안전하게 완료되었습니다!\n\n감사합니다. 🎁', 'success');
                 nameInput.value = '';
                 phoneInput.value = '';
                 submitBtn.disabled = false;
@@ -1888,7 +1963,7 @@
             })
             .catch(err => {
                 console.error(err);
-                alert(`정보 등록 실패: ${err.message}`);
+                showAlert('등록 실패', `정보 등록 실패:\n${err.message}`, 'error');
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '등록 완료하기';
             });

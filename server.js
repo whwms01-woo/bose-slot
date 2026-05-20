@@ -18,9 +18,9 @@ const MIME_TYPES = {
 };
 
 // 구글 스프레드시트 실시간 데이터 전송용 비동기 HTTP POST 헬퍼 (Redirect 대응)
-function postToGoogleSheet(naverId) {
+function postToGoogleSheet(payloadObj) {
     const targetUrl = 'https://script.google.com/macros/s/AKfycbxob1Zjf-UuGun-Ph42yQJTUeiI-BQ2LrdvFiWA9tWyQd8tx8M92CPxzV6jD-pxxJSDUg/exec';
-    const payload = JSON.stringify({ naverId: naverId });
+    const payload = JSON.stringify(payloadObj);
 
     function performRequest(urlToPost) {
         try {
@@ -148,6 +148,7 @@ const server = http.createServer((req, res) => {
             try {
                 const data = JSON.parse(body);
                 const naverId = data.naverId || 'unknown';
+                const action = data.action || 'init'; // 'init', 'spin', or 'info'
                 
                 // 한국 시간대 포맷팅 적용 (KST: UTC +9)
                 const now = new Date();
@@ -156,47 +157,88 @@ const server = http.createServer((req, res) => {
                 const formattedTime = kstDate.toISOString().replace('T', ' ').substring(0, 19);
 
                 const logFile = path.join(__dirname, 'participation_logs.csv');
-                 
-                 // 만약 CSV 파일이 존재하면 중복 아이디가 있는지 정밀 검사합니다 (대소문자 구분 없음)
-                 if (fs.existsSync(logFile)) {
-                     const fileContent = fs.readFileSync(logFile, 'utf-8');
-                     const lines = fileContent.split('\n');
-                     
-                     const isDuplicate = lines.some(line => {
-                         const columns = line.split(',');
-                         if (columns.length >= 2) {
-                             // 따옴표 및 공백 제거 후 비교
-                             const existingId = columns[1].replace(/"/g, '').trim().toLowerCase();
-                             return existingId === naverId.trim().toLowerCase();
-                         }
-                         return false;
-                     });
-                     
-                     if (isDuplicate) {
-                         res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-                         res.end(JSON.stringify({ 
-                             success: false, 
-                             error: 'duplicate', 
-                             message: '이미 이벤트 참여 기회를 획득하신 네이버 아이디입니다! (중복 참여 불가)' 
-                         }));
-                         return;
-                     }
-                 }
-
-                 // 만약 CSV 파일이 없으면 Excel 친화적인 UTF-8 BOM 헤더를 먼저 작성합니다.
-                 if (!fs.existsSync(logFile)) {
-                     fs.writeFileSync(logFile, '\uFEFF참여 일시,네이버 아이디,무료스핀 충전량\n', 'utf-8');
-                 }
-                 
-                 // 로그 라인 작성 (참여일시, 네이버 아이디, 충전 1회)
-                 const logLine = `"${formattedTime}","${naverId}",1\n`;
-                 fs.appendFileSync(logFile, logLine, 'utf-8');
-                 
-                 // 📊 [대표님 CRM 용] 구글 스프레드시트 실시간 비동기 백그라운드 전송 활성화!
-                 postToGoogleSheet(naverId);
-                 
-                 res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-                 res.end(JSON.stringify({ success: true, message: 'Participation log saved successfully' }));
+                
+                // 1. 만약 CSV 파일이 없으면 Excel 친화적인 UTF-8 BOM 헤더를 먼저 작성합니다.
+                if (!fs.existsSync(logFile)) {
+                    fs.writeFileSync(logFile, '\uFEFF참여 일시,네이버 아이디,무료스핀 충전량,당첨 경품,당첨자 성함,당첨자 연락처\n', 'utf-8');
+                }
+                
+                let fileContent = fs.readFileSync(logFile, 'utf-8');
+                let lines = fileContent.split('\n');
+                let foundIndex = -1;
+                
+                // 중복 아이디 또는 기참여 아이디 검색
+                for (let i = 1; i < lines.length; i++) {
+                    const columns = lines[i].split(',');
+                    if (columns.length >= 2) {
+                        const existingId = columns[1].replace(/"/g, '').trim().toLowerCase();
+                        if (existingId === naverId.trim().toLowerCase()) {
+                            foundIndex = i;
+                            break;
+                        }
+                    }
+                }
+                
+                // 'init' 단계에서의 중복 차단 검사
+                if (action === 'init' && foundIndex !== -1) {
+                    res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+                    res.end(JSON.stringify({ 
+                        success: false, 
+                        error: 'duplicate', 
+                        message: '이미 이벤트 참여 기회를 획득하신 네이버 아이디입니다! (중복 참여 불가)' 
+                    }));
+                    return;
+                }
+                
+                // 2. CSV 파일 데이터 갱신 및 기록
+                if (action === 'init') {
+                    if (foundIndex === -1) {
+                        const newLine = `"${formattedTime}","${naverId}",1,"대기중 (스핀 미진행)","",""\n`;
+                        fs.appendFileSync(logFile, newLine, 'utf-8');
+                    }
+                } else if (action === 'spin') {
+                    const prize = data.prize || '미정';
+                    if (foundIndex !== -1) {
+                        const cols = lines[foundIndex].split(',');
+                        if (cols.length >= 4) {
+                            cols[2] = '1';
+                            cols[3] = `"${prize}"`;
+                            lines[foundIndex] = cols.join(',');
+                            fs.writeFileSync(logFile, lines.join('\n'), 'utf-8');
+                        }
+                    } else {
+                        // 만약 배포 등으로 로컬 파일이 일시 소실되었더라도 새 행으로 자동 복구
+                        const newLine = `"${formattedTime}","${naverId}",1,"${prize}","",""\n`;
+                        fs.appendFileSync(logFile, newLine, 'utf-8');
+                    }
+                } else if (action === 'info') {
+                    const name = data.name || '';
+                    const phone = data.phone || '';
+                    if (foundIndex !== -1) {
+                        const cols = lines[foundIndex].split(',');
+                        // 6개 열 구조 보장
+                        while (cols.length < 6) cols.push('""');
+                        cols[4] = `"${name}"`;
+                        cols[5] = `"${phone}"\r`; // 개행 유지용
+                        lines[foundIndex] = cols.join(',');
+                        fs.writeFileSync(logFile, lines.join('\n'), 'utf-8');
+                    } else {
+                        const newLine = `"${formattedTime}","${naverId}",1,"잭팟 경품","${name}","${phone}"\n`;
+                        fs.appendFileSync(logFile, newLine, 'utf-8');
+                    }
+                }
+                
+                // 3. 📊 구글 스프레드시트 실시간 비동기 백그라운드 전송 활성화!
+                postToGoogleSheet({
+                    action: action,
+                    naverId: naverId,
+                    prize: data.prize || '',
+                    name: data.name || '',
+                    phone: data.phone || ''
+                });
+                
+                res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+                res.end(JSON.stringify({ success: true, message: 'CRM data processed successfully' }));
             } catch (err) {
                 res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
                 res.end(JSON.stringify({ error: err.message }));

@@ -932,8 +932,57 @@
                 보스 최고의 헤드폰 당첨을 축하드립니다!<br>브랜드 스토어 알림 동의 후 네이버 페이 배송 주소를 등록해 주세요!
             </div>
 
+            <!-- Dynamic Winner Additional Details Link Gating -->
+            <div id="modal-additional-action-area" style="width: 100%; display: none; margin-bottom: 12px; margin-top: 14px;">
+                <button class="modal-btn" onclick="openAdditionalInfoForm()" style="background: var(--accent-blue); color: #ffffff; box-shadow: 0 6px 15px rgba(0, 132, 255, 0.15); width: 100%; border: none; font-weight: 700;">
+                    추가 정보 기입하기
+                </button>
+            </div>
+
             <button class="modal-close-btn" onclick="closeModal()">
                 창 닫기
+            </button>
+        </div>
+    </div>
+
+    <!-- 당첨자 추가 연락처/성함 기입 모달 팝업 -->
+    <div id="additional-info-modal" class="modal-overlay">
+        <div class="modal-box" style="border-top: 5px solid var(--accent-blue); max-width: 380px;">
+            <div class="modal-badge-glow" style="background: rgba(0, 132, 255, 0.08); color: var(--accent-blue);">
+                Winner Contact Verification
+            </div>
+            <div class="modal-prize-title" style="font-size: 1.25rem; font-weight: 800; margin-bottom: 12px; letter-spacing: -0.5px;">
+                당첨자 추가 정보 기입
+            </div>
+            
+            <div style="font-size: 0.82rem; color: #4b5563; line-height: 1.6; margin-bottom: 18px; text-align: center; font-weight: 500; word-break: keep-all; letter-spacing: -0.3px;">
+                경품 발송 및 개별 연락을 위해<br>성함과 연락처를 입력해 주세요.
+            </div>
+
+            <!-- 기입 폼 패널 -->
+            <div style="text-align: left; margin-bottom: 18px; background: #fafafc; padding: 16px; border-radius: 16px; border: 1px solid rgba(0,0,0,0.04);">
+                <label for="winner-name-input" style="font-size: 0.8rem; font-weight: 700; color: #374151; display: block; margin-bottom: 8px;">
+                    성함
+                </label>
+                <input type="text" id="winner-name-input" placeholder="실명을 입력해 주세요 (예: 홍길동)" style="width: 100%; padding: 12px; border: 1px solid rgba(0,0,0,0.08); border-radius: 10px; font-size: 0.85rem; outline: none; margin-bottom: 16px; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--accent-blue)'" onblur="this.style.borderColor='rgba(0,0,0,0.08)'">
+                
+                <label for="winner-phone-input" style="font-size: 0.8rem; font-weight: 700; color: #374151; display: block; margin-bottom: 8px;">
+                    연락처 (전화번호)
+                </label>
+                <input type="text" id="winner-phone-input" placeholder="연락처 입력 (예: 010-1234-5678)" style="width: 100%; padding: 12px; border: 1px solid rgba(0,0,0,0.08); border-radius: 10px; font-size: 0.85rem; outline: none; transition: border-color 0.2s;" onfocus="this.style.borderColor='var(--accent-blue)'" onblur="this.style.borderColor='rgba(0,0,0,0.08)'">
+                
+                <div style="font-size: 0.65rem; color: #6b7280; font-weight: 600; text-align: left; margin-top: 14px; line-height: 1.4; letter-spacing: -0.4px;">
+                    ℹ️ 해당 정보는 당첨 안내 및 경품 배송 목적을 위해서만 수집되며, 이벤트 종료 후 90일 이내에 완전히 영구 파기될 예정입니다.
+                </div>
+            </div>
+
+            <!-- 스핀 지급 완료 제출 버튼 -->
+            <button class="modal-btn" id="info-submit-btn" onclick="submitAdditionalInfo()" style="background: var(--accent-blue); color: #ffffff; box-shadow: 0 6px 15px rgba(0, 132, 255, 0.15); width: 100%; border: none; font-weight: 700;">
+                등록 완료하기
+            </button>
+            
+            <button class="modal-close-btn" onclick="closeAdditionalInfoModal()" style="margin-top: 14px; font-size: 0.8rem; color: #9ca3af; text-decoration: underline; background: none; border: none; cursor: pointer; width: auto; box-shadow: none;">
+                닫기
             </button>
         </div>
     </div>
@@ -1143,6 +1192,7 @@
         // Slot items array used to populate slot reels
         const REEL_SIZE = 55; 
         let attemptsLeft = 0; // 첫 화면 참여 가능 횟수 기본 0 설정
+        let currentNaverId = ''; // 실시간 시트 매칭용 네이버 아이디 보관
         let totalSpinsDone = 0; // 점진적 확률 모드용 총 스핀 누적 횟수
         let isSpinning = false;
         let audioCtx = null;
@@ -1484,6 +1534,8 @@
             document.getElementById('modal-product-img-2').src = item2.img;
             document.getElementById('modal-product-img-3').src = item3.img;
 
+            let prizeName = '';
+
             if (tier === 1) {
                 // 🏆 1등 당첨 (헤드폰 완전 동일 3개 일치)
                 playJackpotSound();
@@ -1492,6 +1544,7 @@
                 rankEl.style.background = 'rgba(0, 132, 255, 0.06)';
                 titleEl.innerText = item1.title;
                 descEl.innerHTML = `대단하십니다! 🎉<br>노이즈 캔슬링 끝판왕 명작 <strong style="color:var(--accent-blue);">[${item1.title}]</strong>이<br>완벽하게 3칸 일치하여 1등에 당첨되셨습니다!<br><br><strong>이벤트 종료 후 BOSE 담당자가 개별 연락 드릴 예정입니다.</strong>`;
+                prizeName = `1등 [헤드폰] ${item1.title}`;
             } else if (tier === 2) {
                 // 🌟 2등 당첨 (이어버드 완전 동일 3개 일치)
                 playJackpotSound();
@@ -1500,6 +1553,7 @@
                 rankEl.style.background = 'rgba(3, 199, 90, 0.06)';
                 titleEl.innerText = item1.title;
                 descEl.innerHTML = `축하드립니다! 🌟<br>압도적 초고음질 몰입형 이어폰 <strong style="color:var(--naver-green);">[${item1.title}]</strong>이<br>완벽하게 3칸 일치하여 2등에 당첨되셨습니다!<br><br><strong>이벤트 종료 후 BOSE 담당자가 개별 연락 드릴 예정입니다.</strong>`;
+                prizeName = `2등 [이어버드] ${item1.title}`;
             } else if (tier === 3) {
                 // ✨ 3등 당첨 (스피커 완전 동일 3개 일치)
                 playJackpotSound();
@@ -1508,6 +1562,7 @@
                 rankEl.style.background = 'rgba(0, 132, 255, 0.06)';
                 titleEl.innerText = item1.title;
                 descEl.innerHTML = `축하드립니다! ✨<br>아웃도어 필수템 고품격 스피커 <strong style="color:var(--accent-blue);">[${item1.title}]</strong>이<br>완벽하게 3칸 일치하여 3등에 당첨되셨습니다!<br><br><strong>이벤트 종료 후 BOSE 담당자가 개별 연락 드릴 예정입니다.</strong>`;
+                prizeName = `3등 [스피커] ${item1.title}`;
             } else if (tier === 4) {
                 // 🎟️ 4등 당첨 (같은 카테고리 믹스 3개 매칭)
                 playWinSound();
@@ -1518,6 +1573,7 @@
                 const catKo = item1.categoryLabel;
                 titleEl.innerText = `BOSE ${catKo} 패밀리 믹스 매칭`;
                 descEl.innerHTML = `완벽히 동일한 모델 이미지는 아니지만,<br>3칸 모두 명작 <strong>[${catKo}]</strong> 컬렉션 매칭에 성공하셨습니다!<br><br>보너스 특별상으로 <strong>스토어 10% 특별 구매 할인쿠폰</strong>에 당첨되셨습니다!<br><br><strong>할인 쿠폰은 매주 수요일 오후 2시 신청하신 아이디로 일괄 지급될 예정입니다.</strong>`;
+                prizeName = `4등 [10% 쿠폰] ${catKo} 믹스`;
             } else {
                 // 🎁 5등 당첨 (믹스 매칭 - 꽝 없음 쿠폰)
                 playWinSound();
@@ -1526,6 +1582,32 @@
                 rankEl.style.background = 'rgba(0, 0, 0, 0.04)';
                 titleEl.innerText = `BOSE 스토어 5,000원 웰컴 할인권`;
                 descEl.innerHTML = `아쉽게도 매칭 잭팟은 빗나갔지만 꽝은 없습니다!<br>스토어에서 즉시 적용이 가능한<br><strong style="color:#e11d48;">5,000원 웰컴 할인쿠폰</strong>에 당첨되셨습니다!<br><br><strong>할인 쿠폰은 매주 수요일 오후 2시 신청하신 아이디로 일괄 지급될 예정입니다.</strong>`;
+                prizeName = '5등 [5000원 할인권]';
+            }
+
+            // 🎯 1, 2, 3등 잭팟 당첨 시 연락처 입력 유도 버튼 활성화
+            const actionArea = document.getElementById('modal-additional-action-area');
+            if (actionArea) {
+                if (tier === 1 || tier === 2 || tier === 3) {
+                    actionArea.style.display = 'block';
+                } else {
+                    actionArea.style.display = 'none';
+                }
+            }
+
+            // 📊 [대표님 CRM] 당첨 결과를 로컬 CSV 및 구글 시트에 즉시 실시간 업데이트!
+            if (currentNaverId) {
+                fetch('/api/log-participation', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        action: 'spin',
+                        naverId: currentNaverId,
+                        prize: prizeName
+                    })
+                }).catch(err => console.error('스핀 당첨 결과 로깅 실패:', err));
             }
 
             modal.classList.add('active');
@@ -1645,7 +1727,7 @@
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ naverId: naverId })
+                body: JSON.stringify({ action: 'init', naverId: naverId })
             })
             .then(res => {
                 return res.json().then(data => {
@@ -1657,6 +1739,9 @@
             })
             .then(data => {
                 setTimeout(() => {
+                    // 세션 네이버 아이디 저장
+                    currentNaverId = naverId;
+
                     // 1회 기회 부여
                     attemptsLeft = 1;
                     document.getElementById('attempts-val').innerText = attemptsLeft;
@@ -1680,6 +1765,74 @@
                 alert(`⚠️ 참여 불가 안내\n${err.message}`);
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = '무료 스핀 1회 즉시 받기';
+            });
+        }
+
+        // 🎯 1~3등 잭팟 추가 성함/연락처 등록 제어 스크립트
+        function openAdditionalInfoForm() {
+            // 결과창은 살짝 닫고
+            document.getElementById('result-modal').classList.remove('active');
+            
+            // 추가 정보 입력창 오픈
+            const infoModal = document.getElementById('additional-info-modal');
+            if (infoModal) infoModal.classList.add('active');
+        }
+
+        function closeAdditionalInfoModal() {
+            const infoModal = document.getElementById('additional-info-modal');
+            if (infoModal) infoModal.classList.remove('active');
+            initReels();
+            startIdleAnimation();
+        }
+
+        function submitAdditionalInfo() {
+            const nameInput = document.getElementById('winner-name-input');
+            const phoneInput = document.getElementById('winner-phone-input');
+            const submitBtn = document.getElementById('info-submit-btn');
+
+            if (!nameInput || !phoneInput || !submitBtn) return;
+
+            const name = nameInput.value.trim();
+            const phone = phoneInput.value.trim();
+
+            if (name === '') {
+                alert('당첨 성함을 기입해 주십시오!');
+                return;
+            }
+            if (phone === '') {
+                alert('연락처(전화번호)를 기입해 주십시오!');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '🔄 등록 진행 중...';
+
+            fetch('/api/log-participation', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'info',
+                    naverId: currentNaverId,
+                    name: name,
+                    phone: phone
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                alert('당첨자 정보 등록이 안전하게 완료되었습니다! 감사합니다.');
+                nameInput.value = '';
+                phoneInput.value = '';
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '등록 완료하기';
+                closeAdditionalInfoModal();
+            })
+            .catch(err => {
+                console.error(err);
+                alert(`정보 등록 실패: ${err.message}`);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '등록 완료하기';
             });
         }
     </script>

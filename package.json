@@ -1,0 +1,12 @@
+{
+  "name": "bose-sound-slots",
+  "version": "1.0.0",
+  "description": "Premium Bose Sound Slots marketing game.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {},
+  "author": "BOSE",
+  "license": "ISC"
+}

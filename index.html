@@ -625,13 +625,24 @@
         }
 
         .modal-close-btn {
-            background: transparent;
+            width: 100%;
+            background: var(--primary);
+            color: #ffffff;
+            font-size: 0.95rem;
+            font-weight: 700;
+            padding: 15px;
             border: none;
-            color: var(--text-muted);
-            font-size: 0.8rem;
-            margin-top: 16px;
+            border-radius: 12px;
             cursor: pointer;
-            text-decoration: underline;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+            transition: all 0.2s ease;
+            display: inline-block;
+            margin-top: 8px;
+        }
+
+        .modal-close-btn:hover {
+            background: #27272a;
+            transform: translateY(-1px);
         }
 
         /* 📱 Premium Responsive Mobile Optimization (max-width: 480px) */
@@ -750,8 +761,10 @@
                 line-height: 1.6 !important;
             }
             .modal-close-btn {
-                font-size: 0.74rem !important;
-                margin-top: 12px !important;
+                font-size: 0.88rem !important;
+                padding: 12px !important;
+                border-radius: 10px !important;
+                margin-top: 8px !important;
             }
         }
     </style>
@@ -834,16 +847,16 @@
             </div>
 
             <!-- Bold Store Notice Directly Under Slot Viewport -->
-            <div class="store-notice-box" style="margin: 18px 0 6px; text-align: center; word-break: keep-all; padding: 0 10px;">
+            <div class="store-notice-box" style="margin: 18px 0 6px; text-align: center; word-break: keep-all; padding: 12px 14px; background: rgba(0, 132, 255, 0.04); border: 1px dashed rgba(0, 132, 255, 0.25); border-radius: 12px; width: 100%;">
                 <span style="font-weight: 800; font-size: 0.96rem; color: #000000; letter-spacing: -0.3px; display: block; line-height: 1.5; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.02));">
-                    📢 <span style="color: var(--accent-blue);">Bose 브랜드스토어 알림받기 동의 완료 시</span><br>이벤트 무료 스핀 1회가 즉시 충전됩니다!
+                    <span style="color: var(--accent-blue); font-weight: 900; font-size: 1.02rem;">Bose 브랜드스토어 알림받기 동의 완료 시</span><br>이벤트 무료 스핀 1회가 즉시 충전됩니다!
                 </span>
             </div>
 
             <!-- Controls panel -->
             <div class="control-panel">
                 <button id="spin-btn" class="spin-btn" onclick="startSpinning()">
-                    <span>🎁 브랜드스토어 찜하고 경품 진행하기</span>
+                    <span>브랜드스토어 찜하고 경품 진행하기</span>
                 </button>
                 <div class="attempts-counter">
                     오늘의 참여 기회: <span id="attempts-val" class="attempts-count">3</span>회 남음
@@ -905,10 +918,6 @@
                 보스 최고의 헤드폰 당첨을 축하드립니다!<br>브랜드 스토어 알림 동의 후 네이버 페이 배송 주소를 등록해 주세요!
             </div>
 
-            <button class="modal-btn" onclick="goToStore()">
-                🎁 경품 등록 및 혜택 받으러 가기
-            </button>
-            <br>
             <button class="modal-close-btn" onclick="closeModal()">
                 창 닫기
             </button>
@@ -933,7 +942,7 @@
 
             <!-- 네이버 스토어 바로가기 링크 버튼 -->
             <a href="https://brand.naver.com/bose" target="_blank" class="modal-btn" style="background: var(--naver-green); text-decoration: none; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; gap: 8px; font-weight: 700; box-shadow: 0 6px 15px rgba(3, 199, 90, 0.15);">
-                <span>🟢 BOSE 브랜드스토어 찜하러 가기 🔗</span>
+                <span>BOSE 브랜드스토어 찜하러 가기</span>
             </a>
 
             <!-- 기입 폼 패널 -->
@@ -958,7 +967,7 @@
 
             <!-- 스핀 지급 완료 제출 버튼 -->
             <button class="modal-btn" id="naver-auth-submit-btn" onclick="submitNaverAuth()" style="background: #000000; box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15); width: 100%;">
-                🎁 무료 스핀 1회 즉시 받기
+                무료 스핀 1회 즉시 받기
             </button>
             
             <button class="modal-close-btn" onclick="closeNaverModal()" style="margin-top: 14px; font-size: 0.8rem; color: #9ca3af; text-decoration: underline; background: none; border: none; cursor: pointer;">
@@ -1583,12 +1592,12 @@
             
             if (attemptsLeft > 0) {
                 // 스핀 구동 기회 보유 상태 (Bose 오피셜 블랙 프리미엄)
-                spinBtn.innerHTML = '<span>🔊 SOUND SPIN!</span>';
+                spinBtn.innerHTML = '<span>SOUND SPIN!</span>';
                 spinBtn.style.background = 'var(--primary)';
                 spinBtn.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.12)';
             } else {
                 // 스핀 기회 부족 상태 (Naver 공식 브랜드스토어 그린 강조)
-                spinBtn.innerHTML = '<span>🎁 브랜드스토어 찜하고 경품 진행하기</span>';
+                spinBtn.innerHTML = '<span>브랜드스토어 찜하고 경품 진행하기</span>';
                 spinBtn.style.background = 'var(--naver-green)';
                 spinBtn.style.boxShadow = '0 8px 24px rgba(3, 199, 90, 0.15)';
             }
@@ -1647,7 +1656,7 @@
                     naverIdInput.value = '';
                     agreeCheck.checked = false;
                     submitBtn.disabled = false;
-                    submitBtn.innerHTML = '🎁 무료 스핀 1회 즉시 받기';
+                    submitBtn.innerHTML = '무료 스핀 1회 즉시 받기';
                     
                     closeNaverModal();
                 }, 850);
@@ -1656,7 +1665,7 @@
                 console.error(err);
                 alert(`⚠️ 참여 불가 안내\n${err.message}`);
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '🎁 무료 스핀 1회 즉시 받기';
+                submitBtn.innerHTML = '무료 스핀 1회 즉시 받기';
             });
         }
     </script>

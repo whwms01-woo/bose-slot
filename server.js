@@ -19,7 +19,7 @@ const MIME_TYPES = {
 
 // 구글 스프레드시트 실시간 데이터 전송용 비동기 HTTP POST 헬퍼 (Redirect 대응)
 function postToGoogleSheet(payloadObj) {
-    const targetUrl = 'https://script.google.com/macros/s/AKfycbxob1Zjf-UuGun-Ph42yQJTUeiI-BQ2LrdvFiWA9tWyQd8tx8M92CPxzV6jD-pxxJSDUg/exec';
+    const targetUrl = 'https://script.google.com/macros/s/AKfycbzQXDRI3dyzNwE1190_ypXz9Hk-mATWLtQYeY_Qp1L1G-wYimbgXNJOEYjoExCRly9nzQ/exec';
     const payload = JSON.stringify(payloadObj);
 
     function performRequest(urlToPost) {

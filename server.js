@@ -158,6 +158,23 @@ const server = http.createServer((req, res) => {
         return;
     }
 
+    // 🔒 [관리자 전용] 엑셀(CSV) 참여 기록 비공개 즉시 다운로드 보안 API
+    if (req.url === '/api/download-crm-logs-secret-9988' && req.method === 'GET') {
+        const logFile = path.join(__dirname, 'participation_logs.csv');
+        if (fs.existsSync(logFile)) {
+            res.writeHead(200, {
+                'Content-Type': 'text/csv; charset=utf-8',
+                'Content-Disposition': 'attachment; filename="bose_slot_participants.csv"'
+            });
+            const stream = fs.createReadStream(logFile);
+            stream.pipe(res);
+        } else {
+            res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+            res.end('아직 등록된 이벤트 참여자가 존재하지 않습니다.');
+        }
+        return;
+    }
+
     // Default route mapping
     let requestedPath = req.url === '/' ? '/index.html' : req.url;
     

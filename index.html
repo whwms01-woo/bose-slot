@@ -767,6 +767,20 @@
                 margin-top: 8px !important;
             }
         }
+
+        /* Subtle Floating Creator Watermark */
+        .creator-watermark {
+            position: fixed;
+            bottom: 12px;
+            right: 16px;
+            font-size: 0.65rem;
+            color: rgba(107, 114, 128, 0.4);
+            font-weight: 600;
+            letter-spacing: -0.2px;
+            pointer-events: none;
+            z-index: 9999;
+            user-select: none;
+        }
     </style>
 </head>
 <body>
@@ -1669,5 +1683,7 @@
             });
         }
     </script>
+    <!-- Beautiful creator watermark floating in bottom-right corner -->
+    <div class="creator-watermark">제작자: 우경석</div>
 </body>
 </html>

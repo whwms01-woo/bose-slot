@@ -1,4 +1,5 @@
 const http = require('http');
+const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
@@ -15,6 +16,49 @@ const MIME_TYPES = {
     '.svg': 'image/svg+xml',
     '.ico': 'image/x-icon'
 };
+
+// 구글 스프레드시트 실시간 데이터 전송용 비동기 HTTP POST 헬퍼 (Redirect 대응)
+function postToGoogleSheet(naverId) {
+    const targetUrl = 'https://script.google.com/macros/s/AKfycbxob1Zjf-UuGun-Ph42yQJTUeiI-BQ2LrdvFiWA9tWyQd8tx8M92CPxzV6jD-pxxJSDUg/exec';
+    const payload = JSON.stringify({ naverId: naverId });
+
+    function performRequest(urlToPost) {
+        try {
+            const urlObj = new URL(urlToPost);
+            const options = {
+                hostname: urlObj.hostname,
+                path: urlObj.pathname + urlObj.search,
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Content-Length': Buffer.byteLength(payload)
+                }
+            };
+
+            const req = https.request(options, (res) => {
+                // 301, 302 리디렉션 응답인 경우 location 헤더를 추적하여 재귀 호출
+                if (res.statusCode === 302 || res.statusCode === 301) {
+                    const redirectUrl = res.headers.location;
+                    if (redirectUrl) {
+                        performRequest(redirectUrl);
+                        return;
+                    }
+                }
+            });
+
+            req.on('error', (err) => {
+                console.error('구글 스프레드시트 데이터 전송 오류:', err.message);
+            });
+
+            req.write(payload);
+            req.end();
+        } catch (err) {
+            console.error('구글 스프레드시트 URL 파싱 오류:', err.message);
+        }
+    }
+
+    performRequest(targetUrl);
+}
 
 const server = http.createServer((req, res) => {
     // API endpoint to dynamically scan assets folder for product images
@@ -147,6 +191,9 @@ const server = http.createServer((req, res) => {
                  // 로그 라인 작성 (참여일시, 네이버 아이디, 충전 1회)
                  const logLine = `"${formattedTime}","${naverId}",1\n`;
                  fs.appendFileSync(logFile, logLine, 'utf-8');
+                 
+                 // 📊 [대표님 CRM 용] 구글 스프레드시트 실시간 비동기 백그라운드 전송 활성화!
+                 postToGoogleSheet(naverId);
                  
                  res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
                  res.end(JSON.stringify({ success: true, message: 'Participation log saved successfully' }));

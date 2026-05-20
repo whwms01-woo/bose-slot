@@ -743,7 +743,7 @@
             <ul style="color: var(--text-muted); font-size: 0.75rem; margin-left: 20px; line-height: 1.8;">
                 <li>본 이벤트는 BOSE 네이버 브랜드스토어 알림받기 동의 고객에 한해 참여 가능합니다.</li>
                 <li>1등 ~ 3등 당첨자는 알림 동의 확인 후 개별 안내 및 실물 경품이 발송됩니다.</li>
-                <li>할인 보너스 쿠폰은 당첨 즉시 네이버 톡톡으로 발급되며 당일 결제 시 사용 가능합니다.</li>
+                <li>할인 쿠폰 당첨은 매주 수요일 2시 일괄 지급됩니다.</li>
                 <li>비정상적이거나 악의적인 경로로 참여 시 당첨이 취소될 수 있습니다.</li>
             </ul>
         </div>
@@ -892,41 +892,36 @@
             const PRIZE_TICKETS = [
                 {
                     rank: 1,
-                    title: "🏆 1등 잭팟 경품 - BOSE 프리미엄 헤드폰",
+                    title: "1등 잭팟 경품 - BOSE 프리미엄 헤드폰",
                     desc: "완벽하게 동일한 헤드폰 3개 매칭 시 증정 (실물 정품 배송)",
-                    icon: "🎧",
                     color: "var(--accent-blue)",
                     bg: "rgba(0, 132, 255, 0.06)"
                 },
                 {
                     rank: 2,
-                    title: "🌟 2등 스페셜 경품 - BOSE 노이즈 캔슬링 이어폰",
+                    title: "2등 스페셜 경품 - BOSE 노이즈 캔슬링 이어폰",
                     desc: "완벽하게 동일한 이어폰 3개 매칭 시 증정 (실물 정품 배송)",
-                    icon: "🎵",
                     color: "var(--naver-green)",
                     bg: "rgba(3, 199, 90, 0.06)"
                 },
                 {
                     rank: 3,
-                    title: "✨ 3등 아웃도어 경품 - BOSE 방수 휴대용 스피커",
+                    title: "3등 아웃도어 경품 - BOSE 방수 휴대용 스피커",
                     desc: "완벽하게 동일한 스피커 3개 매칭 시 증정 (실물 정품 배송)",
-                    icon: "🔊",
                     color: "var(--accent-blue)",
                     bg: "rgba(0, 132, 255, 0.06)"
                 },
                 {
                     rank: 4,
-                    title: "🎟️ 4등 컬렉션 특별상 - 스토어 10% 특별 구매 할인쿠폰",
-                    desc: "동일 카테고리 3칸 믹스 매칭 시 톡톡 자동 즉시 전송",
-                    icon: "🎫",
+                    title: "4등 컬렉션 특별상 - 스토어 10% 특별 구매 할인쿠폰",
+                    desc: "동일 카테고리 3칸 믹스 매칭 시 전용 채널 쿠폰 지급",
                     color: "var(--naver-green)",
                     bg: "rgba(3, 199, 90, 0.06)"
                 },
                 {
                     rank: 5,
-                    title: "🎁 5등 웰컴 감사상 - 스토어 5,000원 웰컴 할인권",
+                    title: "5등 웰컴 감사상 - 스토어 5,000원 웰컴 할인권",
                     desc: "믹스 매칭 실패 시 100% 전원 지급 (꽝 없는 감사 기프트)",
-                    icon: "💝",
                     color: "var(--text-main)",
                     bg: "rgba(0, 0, 0, 0.04)"
                 }
@@ -945,7 +940,6 @@
                             <div class="prize-name" style="font-size: 0.85rem; font-weight: 700; color: #111827; margin-bottom: 2px;">${item.title}</div>
                             <div class="prize-desc" style="font-size: 0.72rem; color: #6b7280; font-weight: 500;">${item.desc}</div>
                         </div>
-                        <div class="prize-icons" style="font-size: 1.1rem; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.06));">${item.icon}</div>
                     </div>
                 `;
                 

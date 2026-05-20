@@ -313,6 +313,7 @@
             height: 96%;
             object-fit: contain;
             filter: drop-shadow(0 6px 15px rgba(0, 0, 0, 0.04));
+            mix-blend-mode: multiply;
         }
 
         /* Control Panel */
@@ -575,6 +576,7 @@
             max-width: 85%;
             max-height: 85%;
             object-fit: contain;
+            mix-blend-mode: multiply;
         }
 
         /* Side-by-side compact outcomes */
@@ -1109,7 +1111,7 @@
                 setTimeout(() => {
                     container.style.display = 'none';
                 }, 300);
-                btn.innerHTML = `<span>전체 경품 라인업 더보기 (${ITEMS.length - 3}개 더보기) ▼</span>`;
+                btn.innerHTML = `<span>전체 경품 라인업 더보기 (4등, 5등 더보기) ▼</span>`;
                 btn.style.borderColor = 'rgba(0,0,0,0.06)';
                 btn.style.color = 'var(--text-muted)';
             }

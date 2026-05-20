@@ -158,9 +158,9 @@ const server = http.createServer((req, res) => {
 
                 const logFile = path.join(__dirname, 'participation_logs.csv');
                 
-                // 1. 만약 CSV 파일이 없으면 Excel 친화적인 UTF-8 BOM 헤더를 먼저 작성합니다.
+                // 1. 만약 CSV 파일이 없으면 Excel 친화적인 UTF-8 BOM 헤더를 작성합니다 (A~D열 전체 로그, G~I열 당첨자 정보 분리).
                 if (!fs.existsSync(logFile)) {
-                    fs.writeFileSync(logFile, '\uFEFF참여 일시,네이버 아이디,무료스핀 충전량,당첨 경품,당첨자 성함,당첨자 연락처\n', 'utf-8');
+                    fs.writeFileSync(logFile, '\uFEFF참여 일시,네이버 아이디,무료스핀 지급량,당첨 순위,,,당첨자 아이디,당첨자 성함,당첨자 연락처\n', 'utf-8');
                 }
                 
                 let fileContent = fs.readFileSync(logFile, 'utf-8');
@@ -193,22 +193,22 @@ const server = http.createServer((req, res) => {
                 // 2. CSV 파일 데이터 갱신 및 기록
                 if (action === 'init') {
                     if (foundIndex === -1) {
-                        const newLine = `"${formattedTime}","${naverId}",1,"대기중 (스핀 미진행)","",""\n`;
+                        // [참여시간, 아이디, 지급량, 당첨순위, 빈칸1, 빈칸2, 당첨자아이디, 성함, 연락처]
+                        const newLine = `"${formattedTime}","${naverId}",1,"대기중 (스핀 미진행)","","","","",""\n`;
                         fs.appendFileSync(logFile, newLine, 'utf-8');
                     }
                 } else if (action === 'spin') {
                     const prize = data.prize || '미정';
                     if (foundIndex !== -1) {
                         const cols = lines[foundIndex].split(',');
-                        if (cols.length >= 4) {
-                            cols[2] = '1';
-                            cols[3] = `"${prize}"`;
-                            lines[foundIndex] = cols.join(',');
-                            fs.writeFileSync(logFile, lines.join('\n'), 'utf-8');
-                        }
+                        // 9개 열 구조 보장
+                        while (cols.length < 9) cols.push('""');
+                        cols[2] = '1';
+                        cols[3] = `"${prize}"`;
+                        lines[foundIndex] = cols.join(',');
+                        fs.writeFileSync(logFile, lines.join('\n'), 'utf-8');
                     } else {
-                        // 만약 배포 등으로 로컬 파일이 일시 소실되었더라도 새 행으로 자동 복구
-                        const newLine = `"${formattedTime}","${naverId}",1,"${prize}","",""\n`;
+                        const newLine = `"${formattedTime}","${naverId}",1,"${prize}","","","","",""\n`;
                         fs.appendFileSync(logFile, newLine, 'utf-8');
                     }
                 } else if (action === 'info') {
@@ -216,14 +216,15 @@ const server = http.createServer((req, res) => {
                     const phone = data.phone || '';
                     if (foundIndex !== -1) {
                         const cols = lines[foundIndex].split(',');
-                        // 6개 열 구조 보장
-                        while (cols.length < 6) cols.push('""');
-                        cols[4] = `"${name}"`;
-                        cols[5] = `"${phone}"\r`; // 개행 유지용
+                        // 9개 열 구조 보장
+                        while (cols.length < 9) cols.push('""');
+                        cols[6] = `"${naverId}"`; // G열: 당첨자 아이디
+                        cols[7] = `"${name}"`;    // H열: 당첨자 성함
+                        cols[8] = `"${phone}"\r`; // I열: 당첨자 연락처
                         lines[foundIndex] = cols.join(',');
                         fs.writeFileSync(logFile, lines.join('\n'), 'utf-8');
                     } else {
-                        const newLine = `"${formattedTime}","${naverId}",1,"잭팟 경품","${name}","${phone}"\n`;
+                        const newLine = `"${formattedTime}","${naverId}",1,"잭팟 경품","","","${naverId}","${name}","${phone}"\n`;
                         fs.appendFileSync(logFile, newLine, 'utf-8');
                     }
                 }

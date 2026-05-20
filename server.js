@@ -100,23 +100,41 @@ const server = http.createServer((req, res) => {
 
                 // Extract number for pretty labeling, e.g. HD_12 -> 12
                 const numMatch = nameWithoutExt.match(/\d+/);
-                const number = numMatch ? numMatch[0] : '';
+                const number = numMatch ? parseInt(numMatch[0]) : 1;
                 
                 let label = nameWithoutExt;
                 let title = nameWithoutExt;
                 let rank = '스페셜 경품! 🎁';
 
                 if (category === 'headphone') {
-                    label = `Bose Headphone ${number}`;
-                    title = `QuietComfort Headphone ${number}`;
+                    if (number >= 1 && number <= 5) {
+                        label = '울트라 헤드폰 2세대';
+                        title = '울트라 헤드폰 2세대';
+                    } else {
+                        label = `Bose Headphone ${number}`;
+                        title = `QuietComfort Headphone ${number}`;
+                    }
                     rank = '1등 대박 경품 획득! 🏆';
                 } else if (category === 'earbud') {
-                    label = `Bose Earbud ${number}`;
-                    title = `QuietComfort Earbud ${number}`;
+                    if (number >= 1 && number <= 5) {
+                        label = 'QC 울트라 이어버드 2세대';
+                        title = 'QC 울트라 이어버드 2세대';
+                    } else if (number >= 6 && number <= 14) {
+                        label = '울트라 오픈 이어버드';
+                        title = '울트라 오픈 이어버드';
+                    } else {
+                        label = `Bose Earbud ${number}`;
+                        title = `QuietComfort Earbud ${number}`;
+                    }
                     rank = '2등 최고 경품 획득! 🌟';
                 } else if (category === 'speaker') {
-                    label = `Bose Speaker ${number}`;
-                    title = `SoundLink Speaker ${number}`;
+                    if (number >= 1 && number <= 6) {
+                        label = '마이크로 스피커 2세대';
+                        title = '마이크로 스피커 2세대';
+                    } else {
+                        label = `Bose Speaker ${number}`;
+                        title = `SoundLink Speaker ${number}`;
+                    }
                     rank = '3등 감동 경품 획득! ✨';
                 }
 

@@ -645,6 +645,34 @@
             transform: translateY(-1px);
         }
 
+        /* Premium Warning Box */
+        .modal-warning-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.15);
+            border-radius: 8px;
+            padding: 8px 12px;
+            margin-top: 10px;
+            text-align: center;
+        }
+        
+        .modal-warning-box .warning-text {
+            font-size: 0.74rem;
+            color: #ef4444;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            line-height: 1.4;
+            word-break: keep-all;
+        }
+
+        .modal-warning-box .warning-icon {
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+
         /* 📱 Premium Responsive Mobile Optimization (max-width: 480px) */
         @media (max-width: 480px) {
             .app-container {
@@ -738,21 +766,30 @@
                 padding: 12px !important;
             }
             .modal-box {
-                padding: 24px 18px 20px !important;
-                border-radius: 20px !important;
+                padding: 20px 16px 16px !important;
+                border-radius: 18px !important;
                 width: 95% !important;
                 max-width: 360px !important;
             }
+            .modal-badge-glow {
+                font-size: 0.68rem !important;
+                padding: 3px 8px !important;
+                margin-bottom: 6px !important;
+            }
             .modal-prize-title {
-                font-size: 1.15rem !important;
+                font-size: 1.1rem !important;
                 font-weight: 800 !important;
-                margin-bottom: 14px !important;
+                margin-bottom: 10px !important;
                 letter-spacing: -0.5px !important;
             }
+            #modal-products-container {
+                margin-bottom: 12px !important;
+                gap: 6px !important;
+            }
             .modal-btn {
-                font-size: 0.88rem !important;
-                padding: 13px !important;
-                border-radius: 10px !important;
+                font-size: 0.85rem !important;
+                padding: 11px !important;
+                border-radius: 8px !important;
                 font-weight: 700 !important;
             }
             .modal-product-preview.compact {
@@ -761,18 +798,26 @@
                 border-radius: 12px !important;
             }
             .modal-desc {
-                font-size: 0.82rem !important;
-                margin-bottom: 18px !important;
-                line-height: 1.65 !important;
+                font-size: 0.78rem !important;
+                margin-bottom: 12px !important;
+                line-height: 1.55 !important;
                 word-break: keep-all !important;
                 font-weight: 500 !important;
             }
             .modal-close-btn {
-                font-size: 0.88rem !important;
-                padding: 13px !important;
-                border-radius: 10px !important;
-                margin-top: 8px !important;
+                font-size: 0.85rem !important;
+                padding: 11px !important;
+                border-radius: 8px !important;
+                margin-top: 6px !important;
                 font-weight: 700 !important;
+            }
+            .modal-warning-box {
+                padding: 6px 10px !important;
+                margin-top: 8px !important;
+                border-radius: 6px !important;
+            }
+            .modal-warning-box .warning-text {
+                font-size: 0.7rem !important;
             }
         }
 
@@ -945,8 +990,10 @@
                 <button class="modal-btn" onclick="openAdditionalInfoForm()" style="background: var(--accent-blue); color: #ffffff; box-shadow: 0 6px 15px rgba(0, 132, 255, 0.15); width: 100%; border: none; font-weight: 700;">
                     추가 정보 기입하기
                 </button>
-                <div style="font-size: 0.72rem; color: #ef4444; font-weight: 700; text-align: center; margin-top: 8px; line-height: 1.4; letter-spacing: -0.4px; word-break: keep-all;">
-                    ⚠️ 추가 정보를 기입하지 않으시면 경품 지급 대상자에서 제외될 수 있습니다.
+                <!-- Premium Red Warning Alert Box -->
+                <div class="modal-warning-box">
+                    <span class="warning-icon">⚠️</span>
+                    <span class="warning-text">추가 정보 미기입 시 당첨에서 제외될 수 있습니다.</span>
                 </div>
             </div>
 

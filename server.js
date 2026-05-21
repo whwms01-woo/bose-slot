@@ -197,7 +197,7 @@ const server = http.createServer((req, res) => {
             queueCsvOperation(async () => {
                 try {
                     const data = JSON.parse(body);
-                    const naverId = data.naverId || 'unknown';
+                    const naverId = (data.naverId || 'unknown').replace(/,/g, '').replace(/\s/g, '').trim();
                     const action = data.action || 'init'; // 'init', 'spin', or 'info'
                     
                     // 한국 시간대 포맷팅 적용 (KST: UTC +9)
@@ -257,8 +257,8 @@ const server = http.createServer((req, res) => {
                             while (cols.length < 9) cols.push('""');
                             cols[2] = '1';
                             cols[3] = `"${actualPrize}"`;
-                            // Clean up trailing carriage returns if any
-                            cols[8] = cols[8].replace(/\r/g, '');
+                            // Clean up trailing carriage returns if any safely
+                            cols[8] = (cols[8] || '').replace(/\r/g, '');
                             lines[foundIndex] = cols.join(',');
                             fs.writeFileSync(logFile, lines.join('\n'), 'utf-8');
                         } else {
@@ -266,15 +266,15 @@ const server = http.createServer((req, res) => {
                             fs.appendFileSync(logFile, newLine, 'utf-8');
                         }
                     } else if (action === 'info') {
-                        const name = data.name || '';
-                        const phone = data.phone || '';
+                        const name = (data.name || '').replace(/,/g, '').trim();
+                        const phone = (data.phone || '').replace(/,/g, '').trim();
                         if (foundIndex !== -1) {
                             const cols = lines[foundIndex].split(',');
                             // 9개 열 구조 보장
                             while (cols.length < 9) cols.push('""');
                             
-                            // 대기중이거나 비어있으면 경품 정보도 보정 기록!
-                            const currentPrizeVal = cols[3].replace(/"/g, '').trim();
+                            // 대기중이거나 비어있으면 경품 정보도 보정 기록! (TypeError 방지를 위한 안전 장치)
+                            const currentPrizeVal = (cols[3] || '').replace(/"/g, '').trim();
                             if (prize && (currentPrizeVal === '대기중 (스핀 미진행)' || currentPrizeVal === '' || currentPrizeVal.includes('대기중'))) {
                                 cols[3] = `"${prize}"`;
                             }
@@ -283,8 +283,8 @@ const server = http.createServer((req, res) => {
                             cols[7] = `"${name}"`;    // H열: 당첨자 성함
                             cols[8] = `"${phone}"`;   // I열: 당첨자 연락처
                             
-                            // Clean up trailing carriage returns if any
-                            cols[8] = cols[8].replace(/\r/g, '');
+                            // Clean up trailing carriage returns if any safely
+                            cols[8] = (cols[8] || '').replace(/\r/g, '');
                             
                             lines[foundIndex] = cols.join(',');
                             fs.writeFileSync(logFile, lines.join('\n'), 'utf-8');

@@ -60,6 +60,36 @@ function postToGoogleSheet(payloadObj) {
     performRequest(targetUrl);
 }
 
+// A simple execution queue to prevent race conditions during concurrent CSV reads/writes
+const csvQueue = [];
+let isProcessingQueue = false;
+
+function processQueue() {
+    if (isProcessingQueue || csvQueue.length === 0) return;
+    isProcessingQueue = true;
+    
+    const task = csvQueue.shift();
+    task()
+        .then(() => {
+            isProcessingQueue = false;
+            processQueue();
+        })
+        .catch(err => {
+            console.error('CSV Queue error:', err);
+            isProcessingQueue = false;
+            processQueue();
+        });
+}
+
+function queueCsvOperation(opFn) {
+    return new Promise((resolve, reject) => {
+        csvQueue.push(() => {
+            return opFn().then(resolve).catch(reject);
+        });
+        processQueue();
+    });
+}
+
 const server = http.createServer((req, res) => {
     // API endpoint to dynamically scan assets folder for product images
     if (req.url === '/api/products') {
@@ -163,105 +193,124 @@ const server = http.createServer((req, res) => {
             body += chunk.toString();
         });
         req.on('end', () => {
-            try {
-                const data = JSON.parse(body);
-                const naverId = data.naverId || 'unknown';
-                const action = data.action || 'init'; // 'init', 'spin', or 'info'
-                
-                // 한국 시간대 포맷팅 적용 (KST: UTC +9)
-                const now = new Date();
-                const kstOffset = 9 * 60 * 60 * 1000;
-                const kstDate = new Date(now.getTime() + kstOffset);
-                const formattedTime = kstDate.toISOString().replace('T', ' ').substring(0, 19);
+            // Queue the entire CSV operation to completely prevent concurrent race conditions!
+            queueCsvOperation(async () => {
+                try {
+                    const data = JSON.parse(body);
+                    const naverId = data.naverId || 'unknown';
+                    const action = data.action || 'init'; // 'init', 'spin', or 'info'
+                    
+                    // 한국 시간대 포맷팅 적용 (KST: UTC +9)
+                    const now = new Date();
+                    const kstOffset = 9 * 60 * 60 * 1000;
+                    const kstDate = new Date(now.getTime() + kstOffset);
+                    const formattedTime = kstDate.toISOString().replace('T', ' ').substring(0, 19);
 
-                const logFile = path.join(__dirname, 'participation_logs.csv');
-                
-                // 1. 만약 CSV 파일이 없으면 Excel 친화적인 UTF-8 BOM 헤더를 작성합니다 (A~D열 전체 로그, G~I열 당첨자 정보 분리).
-                if (!fs.existsSync(logFile)) {
-                    fs.writeFileSync(logFile, '\uFEFF참여 일시,네이버 아이디,무료스핀 지급량,당첨 순위,,,당첨자 아이디,당첨자 성함,당첨자 연락처\n', 'utf-8');
-                }
-                
-                let fileContent = fs.readFileSync(logFile, 'utf-8');
-                let lines = fileContent.split('\n');
-                let foundIndex = -1;
-                
-                // 중복 아이디 또는 기참여 아이디 검색
-                for (let i = 1; i < lines.length; i++) {
-                    const columns = lines[i].split(',');
-                    if (columns.length >= 2) {
-                        const existingId = columns[1].replace(/"/g, '').trim().toLowerCase();
-                        if (existingId === naverId.trim().toLowerCase()) {
-                            foundIndex = i;
-                            break;
+                    const logFile = path.join(__dirname, 'participation_logs.csv');
+                    
+                    // 1. 만약 CSV 파일이 없으면 Excel 친화적인 UTF-8 BOM 헤더를 작성합니다 (A~D열 전체 로그, G~I열 당첨자 정보 분리).
+                    if (!fs.existsSync(logFile)) {
+                        fs.writeFileSync(logFile, '\uFEFF참여 일시,네이버 아이디,무료스핀 지급량,당첨 순위,,,당첨자 아이디,당첨자 성함,당첨자 연락처\n', 'utf-8');
+                    }
+                    
+                    let fileContent = fs.readFileSync(logFile, 'utf-8');
+                    let lines = fileContent.split('\n');
+                    let foundIndex = -1;
+                    
+                    // 중복 아이디 또는 기참여 아이디 검색
+                    for (let i = 1; i < lines.length; i++) {
+                        const columns = lines[i].split(',');
+                        if (columns.length >= 2) {
+                            const existingId = columns[1].replace(/"/g, '').trim().toLowerCase();
+                            if (existingId === naverId.trim().toLowerCase()) {
+                                foundIndex = i;
+                                break;
+                            }
                         }
                     }
-                }
-                
-                // 'init' 단계에서의 중복 차단 검사
-                if (action === 'init' && foundIndex !== -1) {
-                    res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
-                    res.end(JSON.stringify({ 
-                        success: false, 
-                        error: 'duplicate', 
-                        message: '이미 이벤트 참여 기회를 획득하신 네이버 아이디입니다! (중복 참여 불가)' 
-                    }));
-                    return;
-                }
-                
-                // 2. CSV 파일 데이터 갱신 및 기록
-                if (action === 'init') {
-                    if (foundIndex === -1) {
-                        // [참여시간, 아이디, 지급량, 당첨순위, 빈칸1, 빈칸2, 당첨자아이디, 성함, 연락처]
-                        const newLine = `"${formattedTime}","${naverId}",1,"대기중 (스핀 미진행)","","","","",""\n`;
-                        fs.appendFileSync(logFile, newLine, 'utf-8');
+                    
+                    // 'init' 단계에서의 중복 차단 검사
+                    if (action === 'init' && foundIndex !== -1) {
+                        res.writeHead(400, { 'Content-Type': 'application/json; charset=utf-8' });
+                        res.end(JSON.stringify({ 
+                            success: false, 
+                            error: 'duplicate', 
+                            message: '이미 이벤트 참여 기회를 획득하신 네이버 아이디입니다! (중복 참여 불가)' 
+                        }));
+                        return;
                     }
-                } else if (action === 'spin') {
-                    const prize = data.prize || '미정';
-                    if (foundIndex !== -1) {
-                        const cols = lines[foundIndex].split(',');
-                        // 9개 열 구조 보장
-                        while (cols.length < 9) cols.push('""');
-                        cols[2] = '1';
-                        cols[3] = `"${prize}"`;
-                        lines[foundIndex] = cols.join(',');
-                        fs.writeFileSync(logFile, lines.join('\n'), 'utf-8');
-                    } else {
-                        const newLine = `"${formattedTime}","${naverId}",1,"${prize}","","","","",""\n`;
-                        fs.appendFileSync(logFile, newLine, 'utf-8');
+                    
+                    let prize = data.prize || '';
+                    
+                    // 2. CSV 파일 데이터 갱신 및 기록
+                    if (action === 'init') {
+                        if (foundIndex === -1) {
+                            // [참여시간, 아이디, 지급량, 당첨순위, 빈칸1, 빈칸2, 당첨자아이디, 성함, 연락처]
+                            const newLine = `"${formattedTime}","${naverId}",1,"대기중 (스핀 미진행)","","","","",""\n`;
+                            fs.appendFileSync(logFile, newLine, 'utf-8');
+                        }
+                    } else if (action === 'spin') {
+                        const actualPrize = prize || '미정';
+                        if (foundIndex !== -1) {
+                            const cols = lines[foundIndex].split(',');
+                            // 9개 열 구조 보장
+                            while (cols.length < 9) cols.push('""');
+                            cols[2] = '1';
+                            cols[3] = `"${actualPrize}"`;
+                            // Clean up trailing carriage returns if any
+                            cols[8] = cols[8].replace(/\r/g, '');
+                            lines[foundIndex] = cols.join(',');
+                            fs.writeFileSync(logFile, lines.join('\n'), 'utf-8');
+                        } else {
+                            const newLine = `"${formattedTime}","${naverId}",1,"${actualPrize}","","","","",""\n`;
+                            fs.appendFileSync(logFile, newLine, 'utf-8');
+                        }
+                    } else if (action === 'info') {
+                        const name = data.name || '';
+                        const phone = data.phone || '';
+                        if (foundIndex !== -1) {
+                            const cols = lines[foundIndex].split(',');
+                            // 9개 열 구조 보장
+                            while (cols.length < 9) cols.push('""');
+                            
+                            // 대기중이거나 비어있으면 경품 정보도 보정 기록!
+                            const currentPrizeVal = cols[3].replace(/"/g, '').trim();
+                            if (prize && (currentPrizeVal === '대기중 (스핀 미진행)' || currentPrizeVal === '' || currentPrizeVal.includes('대기중'))) {
+                                cols[3] = `"${prize}"`;
+                            }
+                            
+                            cols[6] = `"${naverId}"`; // G열: 당첨자 아이디
+                            cols[7] = `"${name}"`;    // H열: 당첨자 성함
+                            cols[8] = `"${phone}"`;   // I열: 당첨자 연락처
+                            
+                            // Clean up trailing carriage returns if any
+                            cols[8] = cols[8].replace(/\r/g, '');
+                            
+                            lines[foundIndex] = cols.join(',');
+                            fs.writeFileSync(logFile, lines.join('\n'), 'utf-8');
+                        } else {
+                            const actualPrize = prize || '잭팟 경품';
+                            const newLine = `"${formattedTime}","${naverId}",1,"${actualPrize}","","","${naverId}","${name}","${phone}"\n`;
+                            fs.appendFileSync(logFile, newLine, 'utf-8');
+                        }
                     }
-                } else if (action === 'info') {
-                    const name = data.name || '';
-                    const phone = data.phone || '';
-                    if (foundIndex !== -1) {
-                        const cols = lines[foundIndex].split(',');
-                        // 9개 열 구조 보장
-                        while (cols.length < 9) cols.push('""');
-                        cols[6] = `"${naverId}"`; // G열: 당첨자 아이디
-                        cols[7] = `"${name}"`;    // H열: 당첨자 성함
-                        cols[8] = `"${phone}"\r`; // I열: 당첨자 연락처
-                        lines[foundIndex] = cols.join(',');
-                        fs.writeFileSync(logFile, lines.join('\n'), 'utf-8');
-                    } else {
-                        const newLine = `"${formattedTime}","${naverId}",1,"잭팟 경품","","","${naverId}","${name}","${phone}"\n`;
-                        fs.appendFileSync(logFile, newLine, 'utf-8');
-                    }
+                    
+                    // 3. 📊 구글 스프레드시트 실시간 비동기 백그라운드 전송 활성화!
+                    postToGoogleSheet({
+                        action: action,
+                        naverId: naverId,
+                        prize: prize || '',
+                        name: data.name || '',
+                        phone: data.phone || ''
+                    });
+                    
+                    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+                    res.end(JSON.stringify({ success: true, message: 'CRM data processed successfully' }));
+                } catch (err) {
+                    res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+                    res.end(JSON.stringify({ error: err.message }));
                 }
-                
-                // 3. 📊 구글 스프레드시트 실시간 비동기 백그라운드 전송 활성화!
-                postToGoogleSheet({
-                    action: action,
-                    naverId: naverId,
-                    prize: data.prize || '',
-                    name: data.name || '',
-                    phone: data.phone || ''
-                });
-                
-                res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
-                res.end(JSON.stringify({ success: true, message: 'CRM data processed successfully' }));
-            } catch (err) {
-                res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-                res.end(JSON.stringify({ error: err.message }));
-            }
+            });
         });
         return;
     }

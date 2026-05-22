@@ -175,7 +175,7 @@ const server = http.createServer((req, res) => {
                 const spinNumber = ((spinsDone - 1) % 3) + 1; 
 
                 const SPIN_PROBABILITIES = { 1: 0.005, 2: 0.01, 3: 0.02, 4: 0.03, 5: 0.935 };
-                const MARKETING_PROGRESSIVE_MODE = true;
+                const MARKETING_PROGRESSIVE_MODE = false;
                 const PROGRESSIVE_OUTCOMES = { 1: [5, 4], 2: [4, 3], 3: [1, 2, 3] };
 
                 let winningTier = 5;

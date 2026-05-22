@@ -1048,13 +1048,17 @@
         <script>
             async function shareToKakao() {
                 const textToShare = '저 방금 보스 공식 웹스토어에서 잭팟 터졌습니다! 너도 한번 해봐!! 🎉\n' + window.location.href;
-                if (navigator.share) {
+                const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+                
+                // 모바일 기기이면서 공유 API를 지원하는 경우에만 네이티브 공유 패널 띄움
+                if (isMobile && navigator.share) {
                     navigator.share({
                         title: '보스 사운드 슬롯 이벤트',
                         text: '저 방금 보스 공식 웹스토어에서 잭팟 터졌습니다! 너도 한번 해봐!! 🎉',
                         url: window.location.href,
                     }).catch(console.error);
                 } else {
+                    // PC 환경이거나 공유 API가 없는 경우 클립보드로 즉시 복사 (PC 윈도우 기본 공유창 깨짐 방지)
                     try {
                         await navigator.clipboard.writeText(textToShare);
                         alert('당첨 링크가 복사되었습니다! 카카오톡에 붙여넣기 해보세요!');

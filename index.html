@@ -316,8 +316,7 @@
             width: 96%;
             height: 96%;
             object-fit: contain;
-            filter: drop-shadow(0 6px 15px rgba(0, 0, 0, 0.04));
-            mix-blend-mode: multiply;
+            /* 모바일 GPU 부하 방지를 위해 무거운 filter와 mix-blend-mode 삭제 */
         }
 
         /* Control Panel */
@@ -882,8 +881,8 @@
         </div>
 
         <!-- FOMO 카운트다운 타이머 -->
-        <div id="fomo-timer" style="width: 100%; background: #000; color: #fff; padding: 12px; text-align: center; font-weight: 800; border-radius: 12px; margin-bottom: 20px; font-size: 0.9rem; letter-spacing: 1px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-            ⏳ 이벤트 종료까지: <span id="timer-text" style="color: #03c75a;">계산 중...</span>
+        <div id="fomo-timer" style="width: 100%; background: #000; color: #fff; padding: 12px 5px; text-align: center; font-weight: 800; border-radius: 12px; margin-bottom: 20px; font-size: 0.85rem; letter-spacing: -0.5px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); white-space: nowrap;">
+            ⏳ 종료까지: <span id="timer-text" style="color: #03c75a;">계산 중...</span>
         </div>
         <script>
             function startCountdown() {
@@ -1047,7 +1046,8 @@
             </button>
         </div>
         <script>
-            function shareToKakao() {
+            async function shareToKakao() {
+                const textToShare = '저 방금 보스 공식 웹스토어에서 잭팟 터졌습니다! 너도 한번 해봐!! 🎉\n' + window.location.href;
                 if (navigator.share) {
                     navigator.share({
                         title: '보스 사운드 슬롯 이벤트',
@@ -1055,7 +1055,18 @@
                         url: window.location.href,
                     }).catch(console.error);
                 } else {
-                    alert('당첨 내역이 복사되었습니다! 카카오톡에 붙여넣기 해보세요!');
+                    try {
+                        await navigator.clipboard.writeText(textToShare);
+                        alert('당첨 링크가 복사되었습니다! 카카오톡에 붙여넣기 해보세요!');
+                    } catch (e) {
+                        const el = document.createElement('textarea');
+                        el.value = textToShare;
+                        document.body.appendChild(el);
+                        el.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(el);
+                        alert('당첨 링크가 복사되었습니다! 카카오톡에 붙여넣기 해보세요!');
+                    }
                 }
             }
         </script>

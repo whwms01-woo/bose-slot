@@ -33,9 +33,6 @@
             background-color: var(--bg-light);
             color: var(--text-main);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
             overflow-x: hidden;
             background-image: 
                 radial-gradient(circle at 10% 20%, rgba(0, 132, 255, 0.03) 0%, transparent 40%),
@@ -79,6 +76,7 @@
         .app-container {
             width: 100%;
             max-width: 480px; /* Mobile first layout */
+            margin: 0 auto;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -1651,11 +1649,9 @@
                 
                 const transitionDuration = 2 + (i * 0.7); 
                 strip.style.transition = `transform ${transitionDuration}s cubic-bezier(0.15, 0.85, 0.35, 1.05)`;
-                strip.style.filter = 'blur(4px)';
                 strip.style.transform = `translate3d(0, ${finalY}px, 0)`;
 
                 setTimeout(() => {
-                    strip.style.filter = 'none';
                     playTickSound();
                 }, (transitionDuration * 1000) - 200);
             }

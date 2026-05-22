@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BOSE Sound Slots - Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&family=Noto+Sans+KR:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans KR', sans-serif; background: #f5f5f7; padding: 20px; }
+        .dashboard { max-width: 800px; margin: 0 auto; background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h1 { color: #000; text-align: center; }
+        .stat-box { display: flex; justify-content: space-around; margin: 30px 0; }
+        .stat { text-align: center; background: #fafafc; padding: 20px; border-radius: 12px; width: 45%; border: 1px solid #eee; }
+        .stat-value { font-size: 2.5rem; font-weight: 900; color: #0084ff; }
+        .prizes-list { list-style: none; padding: 0; }
+        .prizes-list li { background: #fff; border: 1px solid #ddd; margin-bottom: 10px; padding: 15px; border-radius: 8px; display: flex; justify-content: space-between; font-weight: bold; }
+        .refresh-btn { display: block; width: 100%; padding: 15px; background: #000; color: #fff; border: none; border-radius: 10px; font-size: 1.1rem; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="dashboard" id="dash" style="display: none;">
+        <h1>📊 BOSE 이벤트 실시간 관제탑</h1>
+        <div class="stat-box">
+            <div class="stat">
+                <div>총 참여자 수</div>
+                <div class="stat-value" id="tot-users">0</div>
+            </div>
+            <div class="stat">
+                <div>누적 스핀 횟수</div>
+                <div class="stat-value" id="tot-spins">0</div>
+            </div>
+        </div>
+        <h2>🎁 경품 당첨 현황</h2>
+        <ul class="prizes-list" id="prize-list"></ul>
+        <button class="refresh-btn" onclick="loadStats()">🔄 실시간 데이터 새로고침</button>
+    </div>
+
+    <script>
+        const pwd = prompt("관리자 비밀번호를 입력하세요 (Hint: 9988)");
+        if(pwd === "9988") {
+            document.getElementById('dash').style.display = 'block';
+            loadStats();
+        } else {
+            alert("비밀번호가 틀렸습니다.");
+        }
+
+        async function loadStats() {
+            try {
+                const res = await fetch('/api/admin/stats-secret-9988');
+                const data = await res.json();
+                document.getElementById('tot-users').innerText = data.totalParticipants;
+                document.getElementById('tot-spins').innerText = data.totalSpins;
+                
+                const list = document.getElementById('prize-list');
+                list.innerHTML = '';
+                for (const [prize, count] of Object.entries(data.prizes)) {
+                    list.innerHTML += `<li><span>${prize}</span> <span style="color:#03c75a;">${count}개</span></li>`;
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -91,98 +91,178 @@ function queueCsvOperation(opFn) {
 }
 
 const server = http.createServer((req, res) => {
+    // Helper to get products dynamically
+    function getProducts() {
+        return new Promise((resolve, reject) => {
+            const assetsDir = path.join(__dirname, 'assets');
+            fs.readdir(assetsDir, (err, files) => {
+                if (err) return reject(err);
+                
+                const images = files.filter(file => {
+                    const ext = path.extname(file).toLowerCase();
+                    const isImage = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'].includes(ext);
+                    const isNotBg = !file.toLowerCase().includes('bg') && !file.toLowerCase().includes('event');
+                    return isImage && isNotBg;
+                });
+
+                const products = images.map((file) => {
+                    const nameWithoutExt = path.basename(file, path.extname(file));
+                    const lowerName = nameWithoutExt.toLowerCase();
+                    
+                    let category = 'etc';
+                    let categoryLabel = '기타';
+                    
+                    if (lowerName.startsWith('hd')) { category = 'headphone'; categoryLabel = '헤드폰'; }
+                    else if (lowerName.startsWith('er')) { category = 'earbud'; categoryLabel = '이어버드'; }
+                    else if (lowerName.startsWith('sp')) { category = 'speaker'; categoryLabel = '스피커'; }
+
+                    const numMatch = nameWithoutExt.match(/\d+/);
+                    const number = numMatch ? parseInt(numMatch[0]) : 1;
+                    
+                    let label = nameWithoutExt, title = nameWithoutExt, rank = '스페셜 경품! 🎁';
+
+                    if (category === 'headphone') {
+                        if (number >= 1 && number <= 5) { label = '울트라 헤드폰 2세대'; title = '울트라 헤드폰 2세대'; }
+                        else { label = `Bose Headphone ${number}`; title = `QuietComfort Headphone ${number}`; }
+                        rank = '1등 대박 경품 획득! 🏆';
+                    } else if (category === 'earbud') {
+                        if (number >= 1 && number <= 5) { label = 'QC 울트라 이어버드 2세대'; title = 'QC 울트라 이어버드 2세대'; }
+                        else if (number >= 6 && number <= 14) { label = '울트라 오픈 이어버드'; title = '울트라 오픈 이어버드'; }
+                        else { label = `Bose Earbud ${number}`; title = `QuietComfort Earbud ${number}`; }
+                        rank = '2등 최고 경품 획득! 🌟';
+                    } else if (category === 'speaker') {
+                        if (number >= 1 && number <= 6) { label = '마이크로 스피커 2세대'; title = '마이크로 스피커 2세대'; }
+                        else { label = `Bose Speaker ${number}`; title = `SoundLink Speaker ${number}`; }
+                        rank = '3등 감동 경품 획득! ✨';
+                    }
+
+                    return {
+                        id: nameWithoutExt, category, categoryLabel, label, img: `./assets/${file}`, rank, title,
+                        desc: `축하드립니다! 대표님의 완벽한 슬롯 매칭으로 보스 명작 [${title}] 경품의 주인공이 되셨습니다! 스토어 알림 동의가 완료되면 전용 배송 등록 처리가 개시됩니다!`
+                    };
+                });
+                resolve(products);
+            });
+        });
+    }
+
     // API endpoint to dynamically scan assets folder for product images
     if (req.url === '/api/products') {
-        const assetsDir = path.join(__dirname, 'assets');
-        fs.readdir(assetsDir, (err, files) => {
-            if (err) {
-                res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
-                res.end(JSON.stringify({ error: err.message }));
-                return;
-            }
-            
-            // Filter image files, exclude event background images
-            const images = files.filter(file => {
-                const ext = path.extname(file).toLowerCase();
-                const isImage = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'].includes(ext);
-                const isNotBg = !file.toLowerCase().includes('bg') && !file.toLowerCase().includes('event');
-                return isImage && isNotBg;
-            });
-
-            // Map image files to dynamic slot items with precise category classification
-            const products = images.map((file) => {
-                const nameWithoutExt = path.basename(file, path.extname(file));
-                const lowerName = nameWithoutExt.toLowerCase();
-                
-                let category = 'etc';
-                let categoryLabel = '기타';
-                
-                if (lowerName.startsWith('hd')) {
-                    category = 'headphone';
-                    categoryLabel = '헤드폰';
-                } else if (lowerName.startsWith('er')) {
-                    category = 'earbud';
-                    categoryLabel = '이어버드';
-                } else if (lowerName.startsWith('sp')) {
-                    category = 'speaker';
-                    categoryLabel = '스피커';
-                }
-
-                // Extract number for pretty labeling, e.g. HD_12 -> 12
-                const numMatch = nameWithoutExt.match(/\d+/);
-                const number = numMatch ? parseInt(numMatch[0]) : 1;
-                
-                let label = nameWithoutExt;
-                let title = nameWithoutExt;
-                let rank = '스페셜 경품! 🎁';
-
-                if (category === 'headphone') {
-                    if (number >= 1 && number <= 5) {
-                        label = '울트라 헤드폰 2세대';
-                        title = '울트라 헤드폰 2세대';
-                    } else {
-                        label = `Bose Headphone ${number}`;
-                        title = `QuietComfort Headphone ${number}`;
-                    }
-                    rank = '1등 대박 경품 획득! 🏆';
-                } else if (category === 'earbud') {
-                    if (number >= 1 && number <= 5) {
-                        label = 'QC 울트라 이어버드 2세대';
-                        title = 'QC 울트라 이어버드 2세대';
-                    } else if (number >= 6 && number <= 14) {
-                        label = '울트라 오픈 이어버드';
-                        title = '울트라 오픈 이어버드';
-                    } else {
-                        label = `Bose Earbud ${number}`;
-                        title = `QuietComfort Earbud ${number}`;
-                    }
-                    rank = '2등 최고 경품 획득! 🌟';
-                } else if (category === 'speaker') {
-                    if (number >= 1 && number <= 6) {
-                        label = '마이크로 스피커 2세대';
-                        title = '마이크로 스피커 2세대';
-                    } else {
-                        label = `Bose Speaker ${number}`;
-                        title = `SoundLink Speaker ${number}`;
-                    }
-                    rank = '3등 감동 경품 획득! ✨';
-                }
-
-                return {
-                    id: nameWithoutExt,
-                    category: category,
-                    categoryLabel: categoryLabel,
-                    label: label,
-                    img: `./assets/${file}`,
-                    rank: rank,
-                    title: title,
-                    desc: `축하드립니다! 대표님의 완벽한 슬롯 매칭으로 보스 명작 [${title}] 경품의 주인공이 되셨습니다! 스토어 알림 동의가 완료되면 전용 배송 등록 처리가 개시됩니다!`
-                };
-            });
-
+        getProducts().then(products => {
             res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
             res.end(JSON.stringify(products));
+        }).catch(err => {
+            res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+            res.end(JSON.stringify({ error: err.message }));
         });
+        return;
+    }
+
+    // [보안 고도화] 어뷰징 방지: 서버사이드 당첨 확률 로직 이전
+    if (req.url === '/api/spin' && req.method === 'POST') {
+        let body = '';
+        req.on('data', chunk => { body += chunk.toString(); });
+        req.on('end', async () => {
+            try {
+                const data = JSON.parse(body);
+                const naverId = data.naverId || 'unknown';
+                
+                if (!global.userSessions) global.userSessions = {};
+                if (!global.userSessions[naverId]) global.userSessions[naverId] = { spinsDone: 0 };
+                global.userSessions[naverId].spinsDone++;
+                
+                const spinsDone = global.userSessions[naverId].spinsDone;
+                const spinNumber = ((spinsDone - 1) % 3) + 1; 
+
+                const SPIN_PROBABILITIES = { 1: 0.005, 2: 0.01, 3: 0.02, 4: 0.03, 5: 0.935 };
+                const MARKETING_PROGRESSIVE_MODE = true;
+                const PROGRESSIVE_OUTCOMES = { 1: [5, 4], 2: [4, 3], 3: [1, 2, 3] };
+
+                let winningTier = 5;
+                if (MARKETING_PROGRESSIVE_MODE && PROGRESSIVE_OUTCOMES[spinNumber]) {
+                    const possibleTiers = PROGRESSIVE_OUTCOMES[spinNumber];
+                    winningTier = possibleTiers[Math.floor(Math.random() * possibleTiers.length)];
+                } else {
+                    const totalWeight = Object.values(SPIN_PROBABILITIES).reduce((a, b) => a + b, 0);
+                    let rand = Math.random() * totalWeight;
+                    for (const [tier, weight] of Object.entries(SPIN_PROBABILITIES)) {
+                        rand -= weight;
+                        if (rand <= 0) { winningTier = parseInt(tier); break; }
+                    }
+                }
+
+                const ITEMS = await getProducts();
+                const headphones = ITEMS.filter(item => item.category === 'headphone');
+                const earbuds = ITEMS.filter(item => item.category === 'earbud');
+                const speakers = ITEMS.filter(item => item.category === 'speaker');
+
+                let item1, item2, item3;
+                switch (winningTier) {
+                    case 1:
+                        const luckyHD = headphones[Math.floor(Math.random() * headphones.length)] || ITEMS[0];
+                        item1 = item2 = item3 = luckyHD; break;
+                    case 2:
+                        const luckyER = earbuds[Math.floor(Math.random() * earbuds.length)] || ITEMS[0];
+                        item1 = item2 = item3 = luckyER; break;
+                    case 3:
+                        const luckySP = speakers[Math.floor(Math.random() * speakers.length)] || ITEMS[0];
+                        item1 = item2 = item3 = luckySP; break;
+                    case 4:
+                        const validCategories = [];
+                        if (headphones.length >= 2) validCategories.push('headphone');
+                        if (earbuds.length >= 2) validCategories.push('earbud');
+                        if (speakers.length >= 2) validCategories.push('speaker');
+                        const chosenCat = validCategories.length > 0 ? validCategories[Math.floor(Math.random() * validCategories.length)] : 'headphone';
+                        const catItems = ITEMS.filter(item => item.category === chosenCat);
+                        const shuffled = [...catItems].sort(() => 0.5 - Math.random());
+                        item1 = shuffled[0]; item2 = shuffled[1] || shuffled[0]; item3 = shuffled[2] || shuffled[0];
+                        if (item1.id === item2.id && item2.id === item3.id && catItems.length >= 2) {
+                            const alternate = catItems.find(item => item.id !== item1.id);
+                            if (alternate) item3 = alternate;
+                        }
+                        break;
+                    case 5:
+                    default:
+                        let tries = 0;
+                        do {
+                            item1 = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+                            item2 = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+                            item3 = ITEMS[Math.floor(Math.random() * ITEMS.length)];
+                            tries++;
+                        } while (((item1.id === item2.id && item2.id === item3.id) || (item1.category === item2.category && item2.category === item3.category)) && tries < 50);
+                        break;
+                }
+
+                res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+                res.end(JSON.stringify({ winningTier, item1, item2, item3 }));
+            } catch (err) {
+                res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+                res.end(JSON.stringify({ error: err.message }));
+            }
+        });
+        return;
+    }
+
+    // [대표님 관리자 대시보드 통계 전용 API]
+    if (req.url === '/api/admin/stats-secret-9988' && req.method === 'GET') {
+        const logFile = path.join(__dirname, 'participation_logs.csv');
+        let stats = { totalParticipants: 0, totalSpins: 0, prizes: {} };
+        if (fs.existsSync(logFile)) {
+            const lines = fs.readFileSync(logFile, 'utf-8').split('\n');
+            stats.totalParticipants = Math.max(0, lines.length - 2); // 헤더 제외
+            for (let i = 1; i < lines.length; i++) {
+                const cols = lines[i].split(',');
+                if (cols.length >= 4) {
+                    const prize = cols[3].replace(/"/g, '').trim();
+                    if (prize && prize !== '대기중 (스핀 미진행)') {
+                        stats.totalSpins++;
+                        stats.prizes[prize] = (stats.prizes[prize] || 0) + 1;
+                    }
+                }
+            }
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        res.end(JSON.stringify(stats));
         return;
     }
 
